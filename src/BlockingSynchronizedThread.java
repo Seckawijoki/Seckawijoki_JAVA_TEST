@@ -16,7 +16,7 @@ public class BlockingSynchronizedThread {
   /**
    * 定义一个阻塞队列用来存储生产出来的商品
    */
-  private LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
+  private LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<>();
   /**
    * 定义生产商品个数
    */
