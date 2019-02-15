@@ -11,30 +11,10 @@ import sun.rmi.runtime.Log;
 
 public class Test {
   public static void main(String[] args) {
-    String filepath = "aa/bbb/ccc/ddd/eee.txt";
-    File file = new File(filepath);
-    System.out.println("Test.main(): file = " + file);
-    System.out.println("Test.main(): file.exists() = " + file.exists());
-    System.out.println("Test.main(): file.canWrite() = " + file.canWrite());
-    System.out.println("Test.main(): file.getName() = " + file.getName());
-    boolean result = createFile(filepath);
-    System.out.println("Test.main(): result = " + result);
-    saveBitmap(new byte[]{ (byte) 135 }, filepath);
-  }
-  public static boolean createFile(String filepath) {
-    File file = new File(filepath);
-    if (file.exists()) {
-      return true;
-    }
-    File parentDir = file.getParentFile();
-    if (!parentDir.exists() && !parentDir.mkdirs()) {
-      return false;
-    }
-    try {
-      return file.createNewFile();
-    } catch (IOException e) {
-      return false;
-    }
+    String str1 = new StringBuilder().append("计算机").append("系统").toString();
+    String str2 = new StringBuilder().append("ja").append("va").toString();
+    System.out.println("Test.main(): " + (str1.intern() == str1));
+    System.out.println("Test.main(): " + (str2.intern() == str2));
   }
   public static void saveBitmap(byte[] bytes,String savePath){
     try {

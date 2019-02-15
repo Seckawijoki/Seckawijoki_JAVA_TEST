@@ -10,7 +10,7 @@ import java.util.Stack;
 public class ShenXinFu2 {
   private static final ShenXinFu2 INSTANCE = new ShenXinFu2();
   private int mSize;
-  private Stack<String> stringStack = new Stack<>();
+  private Stack<String> stringStack = new Stack();
   public static void main(String[] args) {
     int i = 1;
     if ( i == 0 ) {
@@ -20,12 +20,12 @@ public class ShenXinFu2 {
     Scanner scanner = new Scanner(System.in);
     String str = scanner.nextLine();
     char[] c = str.toCharArray();
-    Stack<Character> stack = new Stack<>();
+    Stack<Character> stack = new Stack();
     for ( int j = 0 ; j < c.length ; j++ ) {
       stack.add(c[c.length - j - 1]);
     }
     INSTANCE.mSize = c.length;
-    INSTANCE.allPopSeq(stack, new Stack<>(), new Stack<>());
+    INSTANCE.allPopSeq(stack, new Stack(), new Stack());
   }
 
   private void printStack(Stack<Character> stack) {
@@ -61,13 +61,13 @@ public class ShenXinFu2 {
     }
   }
   private void test() {
-    Stack<Character> stack = new Stack<>();
+    Stack<Character> stack = new Stack();
     stack.add('c');
     stack.add('b');
     stack.add('a');
     INSTANCE.mSize = stack.size();
     System.out.println("questions.ShenXinFu2.test(): stack = " + stack);
-    INSTANCE.allPopSeq(stack, new Stack<>(), new Stack<Character>());
+    INSTANCE.allPopSeq(stack, new Stack(), new Stack<Character>());
   }
 
 }

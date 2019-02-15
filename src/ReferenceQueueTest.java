@@ -83,8 +83,8 @@ public class ReferenceQueueTest {
     }
 
     private EmployeeCache() {
-      mapEmployeeRefs = new HashMap<>();
-      q = new ReferenceQueue<>();
+      mapEmployeeRefs = new HashMap();
+      q = new ReferenceQueue();
     }
   }
 }

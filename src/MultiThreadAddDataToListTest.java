@@ -20,8 +20,8 @@ public class MultiThreadAddDataToListTest {
     MultiThreadAddDataToListTest test = new MultiThreadAddDataToListTest();
     // 用来测试的List
 //    List<Object> list = new ArrayList<Object>();
-//    List<Object> list = new Vector<>();
-    List<Object> list = new LinkedList<>();
+//    List<Object> list = new Vector();
+    List<Object> list = new LinkedList();
 
     // 线程数量(1000)
     int threadCount = 1000;

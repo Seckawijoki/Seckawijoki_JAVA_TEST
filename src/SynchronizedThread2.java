@@ -50,30 +50,33 @@ public class SynchronizedThread2 {
       threads[i].start();
     }
   }
-  private Queue<Integer> queue = new LinkedList<>();
+  private Queue<Integer> queue = new LinkedList();
 
   public static void main(String[] args) {
-    SynchronizedThread2 st = new SynchronizedThread2();
+    final SynchronizedThread2 st = new SynchronizedThread2();
     st.useThread();
-    new Thread(()->{
-      try {
-        Thread.sleep(5000);
-      } catch ( InterruptedException e ) {
-        e.printStackTrace();
-      }
-      boolean flag = false;
-      for ( int i = 1 ; !st.queue.isEmpty() ; ++i ) {
-        if (st.queue.poll() != i){
-          flag = true;
-          System.out.println("SynchronizedThread.main(): i = " + i);
-          System.out.println("SynchronizedThread.main(): false");
-          break;
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          Thread.sleep(5000);
+        } catch ( InterruptedException e ) {
+          e.printStackTrace();
         }
+        boolean flag = false;
+        for ( int i = 1 ; !st.queue.isEmpty() ; ++i ) {
+          if ( st.queue.poll() != i ) {
+            flag = true;
+            System.out.println("SynchronizedThread.main(): i = " + i);
+            System.out.println("SynchronizedThread.main(): false");
+            break;
+          }
+        }
+        if ( !flag )
+          System.out.println("SynchronizedThread.main(): true");
+        else
+          System.out.println("SynchronizedThread.main(): st.queue = " + st.queue);
       }
-      if (!flag)
-      System.out.println("SynchronizedThread.main(): true");
-      else
-        System.out.println("SynchronizedThread.main(): st.queue = " + st.queue);
     }).start();
   }
 

@@ -10,7 +10,7 @@ public class ProducerConsumerTest {
   private static final int PRODUCER_SLEEP_TIME = 2777;
   private static final int CONSUMER_SLEEP_TIME = 8888;
   public static void main(String[] args) {
-    Queue<Integer> queue = new LinkedList<>();
+    Queue<Integer> queue = new LinkedList();
     ProducerConsumerTest test = new ProducerConsumerTest();
     final int size = 10;
     Producer producer = test.new Producer(queue, size, "Producer");

@@ -26,7 +26,7 @@ public class ReferenceTest {
 
   //-Xms10M -Xmx10M -Xmn5M -XX:+PrintGCDetails
   private static void softReference() {
-    SoftReference<byte[]> softReference = new SoftReference<>(new byte[1024*1024*4]);
+    SoftReference<byte[]> softReference = new SoftReference(new byte[1024*1024*4]);
     System.out.println("ReferenceTest.softReference(): " + softReference.get().length);
     System.gc();
     System.out.println("ReferenceTest.softReference(): " + softReference.get().length);
@@ -34,8 +34,8 @@ public class ReferenceTest {
 
   //-Xms10M -Xmx10M -Xmn5M -XX:+PrintGCDetails
   private static void weakReference() {
-    ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
-    WeakReference<Object> weakReference = new WeakReference<>(new Object(), referenceQueue);
+    ReferenceQueue<Object> referenceQueue = new ReferenceQueue();
+    WeakReference<Object> weakReference = new WeakReference(new Object(), referenceQueue);
     System.out.println("ReferenceTest.weakReference(): " + weakReference.get());
     System.gc();
     System.out.println("ReferenceTest.weakReference(): " + weakReference.get());
@@ -43,16 +43,16 @@ public class ReferenceTest {
 
   private static void weakReference2() {
     Object o = new Object();
-    ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
-    WeakReference<Object> weakReference = new WeakReference<>(o, referenceQueue);
+    ReferenceQueue<Object> referenceQueue = new ReferenceQueue();
+    WeakReference<Object> weakReference = new WeakReference(o, referenceQueue);
     System.out.println("ReferenceTest.weakReference(): " + weakReference.get());
     System.gc();
     System.out.println("ReferenceTest.weakReference(): " + weakReference.get());
   }
 
   private static void phantomReference() {
-    ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
-    PhantomReference<Object> phantomReference = new PhantomReference<>(new Object(), referenceQueue);
+    ReferenceQueue<Object> referenceQueue = new ReferenceQueue();
+    PhantomReference<Object> phantomReference = new PhantomReference(new Object(), referenceQueue);
     System.out.println("ReferenceTest.phantomReference(): " + phantomReference.get());
     System.gc();
     System.out.println("ReferenceTest.phantomReference(): " + phantomReference.get());

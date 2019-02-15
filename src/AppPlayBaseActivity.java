@@ -13,5 +13,6 @@ public class AppPlayBaseActivity extends GameBaseActivity{
     System.out.println("AppPlayBaseActivity._FacebookShare(): jsonstr = " + jsonstr);
     System.out.println("AppPlayBaseActivity._FacebookShare(): imgpath = " + imgpath);
     System.out.println("AppPlayBaseActivity._FacebookShare(): url = " + url);
+    jsonstr.intern();
   }
 }
