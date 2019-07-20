@@ -36,6 +36,27 @@ public class Test {
 //    System.out.println("Test.main(): Class = " + Class.forName("classloader.Singleton"));
 //    System.out.println("Test.main(): singleton.counter1 = " + singleton.counter1);
 //    System.out.println("Test.main(): singleton.counter2 = " + singleton.counter2);
+
+    double[] rates = {
+          14460,
+            70.25,
+            31.58,
+            23275,
+            4.16,
+            52.4,
+            31.15,
+    };
+
+    for (int i = 1; i <= 100; i +=5){
+      String digit = "1.0" + i;
+      float amount = Float.valueOf(digit);
+      System.out.println("Test.main(): amount = " + amount);
+      for ( int j = 0 ; j < rates.length ; ++j ) {
+        int a = (int) (Math.floor(amount * rates[j] + 0.5) * 100);
+        System.out.println("Test.main(): a = " + a);
+      }
+
+    }
   }
   public static void saveBitmap(byte[] bytes,String savePath){
     try {
