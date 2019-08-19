@@ -37,27 +37,28 @@ public class Test {
 //    System.out.println("Test.main(): singleton.counter1 = " + singleton.counter1);
 //    System.out.println("Test.main(): singleton.counter2 = " + singleton.counter2);
 
-    double[] rates = {
-          14460,
-            70.25,
-            31.58,
-            23275,
-            4.16,
-            52.4,
-            31.15,
-    };
+    String versionName = "0....37......5";
+    String adjustment = adjustVersionName(versionName);
+    System.out.println("Test.main(): adjustment = " + adjustment);
 
-    for (int i = 1; i <= 100; i +=5){
-      String digit = "1.0" + i;
-      float amount = Float.valueOf(digit);
-      System.out.println("Test.main(): amount = " + amount);
-      for ( int j = 0 ; j < rates.length ; ++j ) {
-        int a = (int) (Math.floor(amount * rates[j] + 0.5) * 100);
-        System.out.println("Test.main(): a = " + a);
-      }
-
-    }
   }
+
+  private static String adjustVersionName(String versionName){
+    String[] versionDigits = versionName.split("\\.");
+    System.out.println("Test.adjustVersionName(): versionDigits = " + Arrays.toString(versionDigits));
+    StringBuilder stringBuilder = new StringBuilder();
+    if (versionDigits.length >= 3) {
+      int i;
+      for ( i = 0 ; i < versionDigits.length - 1 ; i++ ) if (versionDigits[i].length() > 0) {
+        stringBuilder.append(versionDigits[i]).append('.');
+      }
+      stringBuilder.append(versionDigits[i]);
+    } else {
+      stringBuilder.append(versionName);
+    }
+    return stringBuilder.toString();
+  }
+
   public static void saveBitmap(byte[] bytes,String savePath){
     try {
       FileOutputStream fileOutputStream = new FileOutputStream(savePath);
