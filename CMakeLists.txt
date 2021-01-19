@@ -1,0 +1,610 @@
+
+cmake_policy(SET CMP0017 NEW)
+cmake_minimum_required(VERSION 3.3.0)
+#说明文档
+# MSVC 是VS的环境
+# ANDROID 是android的编译环境
+# APPLE_IOS 是IOS的编译环境
+# LINUX_SERVER  是LINUX的RunTime
+
+set(APP_NAME MiniGame)
+#引擎名称版本号
+project(${APP_NAME} VERSION 1.0.0)
+
+set(OGRE_VERSION_NAME "Mini1Engine")
+set(OGRE_SOVERSION ${OGRE_VERSION})
+set(OGRE_VERSION_DASH_SEPARATED "${OGRE_VERSION_MAJOR}-${OGRE_VERSION_MINOR}-${OGRE_VERSION_PATCH}")
+
+
+#CMAKE的MODULE PATH  
+# Include necessary submodules
+set(CMAKE_MODULE_PATH
+  "${PROJECT_SOURCE_DIR}/CMakeModule"
+  "${PROJECT_SOURCE_DIR}/CMakeModule/Utils"
+  "${PROJECT_SOURCE_DIR}/CMakeModule/Packages"
+)
+
+#增加安卓海外打包，默认为false， 如果为true，编译AndroidAppOverSeas的JNI
+set(ANDROID_OVERSEAS false)
+# 简版开关
+set(IS_LITE_VERSION false)
+
+#系统判定
+include(SystemConfig)
+# Use relative paths
+# This is mostly to reduce path size for command-line limits on windows
+if(WIN32)
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS ON)
+  # This seems to break Xcode projects so definitely don't enable on Apple builds
+  set(CMAKE_USE_RELATIVE_PATHS true)
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+  set(USE_UNICODE FALSE)
+  #让VS支持，重新再VS中，生成工程,VS工程内会看不到CMake文件
+  # set(CMAKE_SUPPRESS_REGENERATION true)
+endif()
+
+
+# 设置多种编译类型的选项
+SET(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+
+  # 设置多种编译类型的选项
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+ endif()
+
+
+
+
+# use legacy swig mode
+if(POLICY CMP0078)
+  cmake_policy(SET CMP0078 OLD)
+endif()
+if(POLICY CMP0086)
+  cmake_policy(SET CMP0086 OLD)
+endif()
+
+
+
+#  ==============苹果======================
+if (APPLE_IOS)
+  # SET(CMAKE_SIZEOF_VOID_P 4)
+
+
+endif ()
+
+
+
+
+
+
+#设置参数
+if(MSVC)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS 
+                  -wd4251 -wd4244 -wd4334 -wd4005 -wd4820 -wd4710
+                  -wd4514 -wd4056 -wd4996 -wd4099)
+                  
+  set(OGRE_STATIC TRUE) #是否编译静态库
+endif(MSVC)
+
+
+
+if (APPLE_IOS)
+  set(OGRE_SET_BUILD_PLATFORM_APPLE_IOS 1)
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+  set(OGRE_STATIC TRUE)
+  set(OGRE_STATIC_LIB TRUE)
+endif()
+
+# should we build static libs?
+
+
+#cmake的目录
+set(OGRE_TEMPLATES_DIR "${PROJECT_SOURCE_DIR}/CMake/Templates")
+
+set(OGRE_WORK_DIR ${PROJECT_BINARY_DIR})
+#环境资源路径
+#set(OGRE_CLIENT_BIN_DIR "${PROJECT_SOURCE_DIR}/../bin_externel")
+
+#代码目录
+set(OGRE_CLIENT_SOURCE "${PROJECT_SOURCE_DIR}")
+set(MINI_ENGINE_DIR ${PROJECT_SOURCE_DIR}/miniEngine)
+set(MINI_ENGINE_SDK_DIR ${PROJECT_SOURCE_DIR}/miniEngineSDK)
+set(MINI_GAME_DIR ${PROJECT_SOURCE_DIR}/miniGame)
+set(MINI_GAME_MODULE_DIR ${PROJECT_SOURCE_DIR}/miniModule)
+set(MINI_GAME_SDK_DIR ${PROJECT_SOURCE_DIR}/external)
+set(MINI_WIN_RUNTIME_DIR ${PROJECT_SOURCE_DIR}/../bin_externel)
+set(MINI_ANDROID_RUNTIME_DIR ${PROJECT_SOURCE_DIR}/../build_android)
+set(MINI_ENGINE_EXT_DIR ${PROJECT_SOURCE_DIR}/miniEngineExt)
+
+#lingbj 修改输出目录
+if(IS_CLANG)
+  set(MINI_ANDROID_BUILD_TYPE  CLANG_${JENKINS_PRO}_${CMAKE_BUILD_TYPE})
+else()
+  set(MINI_ANDROID_BUILD_TYPE  GCC_${JENKINS_PRO}_${CMAKE_BUILD_TYPE})
+endif()
+
+
+if(APPLE_IOS)
+  #.a的拷贝目录
+  set(MINI_IOS_LIBS_OUT_DIR ${MINI_GAME_DIR}/IOSApp/IWorldLibs)
+endif()
+
+#linux的输出目录
+if(LINUX_SERVER)
+  set(LINUX_SERVER_RUNTIME_DIR ${MINI_GAME_DIR}/linux_build)
+endif()
+
+include(OgreConfigTargets) 
+include(CMakeFunc)
+
+
+
+
+
+message(STATUS "Configuring Version ${OGRE_VERSION}")
+# Configure version file for use by scripts
+#configure_file("${OGRE_TEMPLATES_DIR}/version.txt.in" "${PROJECT_BINARY_DIR}/version.txt" @ONLY)
+
+#  32bit or 64bit system 
+# include(CheckTypeSize) #系统自带
+
+# CHECK_TYPE_SIZE("void*" OGRE_PTR_SIZE BUILTIN_TYPES_ONLY)
+# if (OGRE_PTR_SIZE EQUAL 8)
+#   set(OGRE_PLATFORM_X64 TRUE)
+# else ()
+#   set(OGRE_PLATFORM_X64 FALSE)
+# endif ()
+
+
+if (WIN32)
+  # Create debug libraries with _d postfix
+  set(CMAKE_DEBUG_POSTFIX "_d")
+endif ()
+
+# Set compiler specific build flags
+if (NOT ANDROID AND NOT EMSCRIPTEN AND NOT APPLE_IOS AND UNIX OR MINGW)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag(-msse OGRE_GCC_HAS_SSE)
+  if (OGRE_GCC_HAS_SSE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse")
+  endif ()
+endif()
+
+if(UNIX)
+  # This is a set of sensible warnings that provide meaningful output
+  set(OGRE_WARNING_FLAGS "-Wall -Winit-self -Wcast-qual -Wwrite-strings -Wextra -Wundef -Wmissing-declarations -Wno-unused-parameter -Wshadow -Wno-missing-field-initializers -Wno-long-long")
+  if (EMSCRIPTEN)
+      set(OGRE_WARNING_FLAGS "${OGRE_WARNING_FLAGS} -Wno-warn-absolute-paths")
+  endif ()
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(OGRE_WARNING_FLAGS "${OGRE_WARNING_FLAGS} -Wno-inconsistent-missing-override -Wno-missing-braces")
+  endif()
+  set(CMAKE_CXX_FLAGS "${OGRE_WARNING_FLAGS} ${CMAKE_CXX_FLAGS}")
+endif ()
+
+
+if (MSVC)
+      add_definitions(-D_MT -D_USRDLL)
+      # MSVC does not like ENG::Singleton (header pragma is enough for MSVC2015+ though)
+      add_definitions(/wd4661)
+      if (CMAKE_BUILD_TOOL STREQUAL "nmake")
+        # set variable to state that we are using nmake makefiles
+        set(NMAKE TRUE)
+      endif ()
+
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /fp:precise")
+      # Enable intrinsics on MSVC in debug mode
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Oi")
+
+      if (CMAKE_CL_64)
+          # Visual Studio bails out on debug builds in 64bit mode unless
+        # this flag is set...
+        set(IS_64_BIT TRUE)
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /bigobj")
+      endif ()
+
+      if (OGRE_PROJECT_FOLDERS)  
+        # Turn on the ability to create folders to organize projects (.vcproj)
+        # It creates "CMakePredefinedTargets" folder by default and adds CMake
+        # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
+        set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+      endif()
+
+      if (MSVC_VERSION GREATER 1500 OR MSVC_VERSION EQUAL 1500)
+        option(OGRE_BUILD_MSVC_MP "Enable build with multiple processes in Visual Studio" TRUE)
+      else()
+        set(OGRE_BUILD_MSVC_MP FALSE CACHE BOOL "Compiler option /MP requires at least Visual Studio 2008 (VS9) or newer" FORCE)
+      endif()
+      if(OGRE_BUILD_MSVC_MP)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+      endif ()
+      if(MSVC_VERSION GREATER 1400 OR MSVC_VERSION EQUAL 1400)
+        option(OGRE_BUILD_MSVC_ZM "Add /Zm256 compiler option to Visual Studio to fix PCH errors" TRUE)
+      else()
+        set(OGRE_BUILD_MSVC_ZM FALSE CACHE BOOL "Compiler option /Zm256 requires at least Visual Studio 2005 (VS8) or newer" FORCE)
+      endif()
+	  
+	  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+	  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
+	  
+      if(OGRE_BUILD_MSVC_ZM)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm256")
+      endif ()
+endif ()
+
+
+include(GenerateExportHeader) #系统自带
+# set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+# set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
+# if((CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU") AND NOT OGRE_STATIC)
+  # set(OGRE_VISIBILITY_FLAGS "-DOGRE_GCC_VISIBILITY") # for legacy headers
+# endif()
+
+
+# determine system endianess
+if (MSVC OR ANDROID OR EMSCRIPTEN OR APPLE_IOS)
+  # This doesn't work on VS 2010
+  # MSVC only builds for intel anyway
+  # all IOS devices are little endian
+  set(OGRE_TEST_BIG_ENDIAN FALSE)
+else()
+  include(TestBigEndian)
+  test_big_endian(OGRE_TEST_BIG_ENDIAN)
+endif()
+
+set(OGRE_LIBRARIES ENGMain)
+
+if(NOT ANDROID_STUDIO_DEBUG)
+# PROJECT_BINARY_DIR 就是build的路径
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+endif()
+# Set up iOS overrides.
+if(MSVC)
+	MESSAGE("===========MSVC BUILDING MESSAGE INFO==============")
+	set(OGRE_PLATFORM OGRE_PLATFORM_WIN32)
+	if (CMAKE_CL_64)
+		# Visual Studio bails out on debug builds in 64bit mode unless
+		# this flag is set...
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+	endif ()
+	#IWORLD_DEV_BUILD的是GM指令开启的宏，在这里设定
+  if(WIN_VER_XP)
+    #设置XP编译目标
+    add_definitions(-D_WIN32_WINNT=0x0501)
+		set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG} /DIWORLD_DEV_BUILD /D_DEBUG /DDEBUG_RENDER")
+        if(ADVANCE_VER)
+            set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /DENABLE_VMP /DENABLE_VM_RUN /DWIN_VER_XP /DIWORLD_ADVANCE_BUILD")
+        else()
+            set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /DENABLE_VMP /DENABLE_VM_RUN /DWIN_VER_XP")
+        endif(ADVANCE_VER)
+	elseif(WIN_VER_ABOVE_XP)
+		set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG} /DIWORLD_DEV_BUILD /D_DEBUG /DDEBUG_RENDER")
+        if(ADVANCE_VER)
+            set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /DOGRE_USE_CEF3_LIB /DENABLE_VMP /DENABLE_VM_RUN /DIWORLD_ADVANCE_BUILD")
+        else()
+            set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /DOGRE_USE_CEF3_LIB /DENABLE_VMP /DENABLE_VM_RUN")
+        endif(ADVANCE_VER)
+	else()
+		set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG} /DIWORLD_DEV_BUILD /D_DEBUG /DDEBUG_RENDER")
+		set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /DOGRE_USE_CEF3_LIB /DENABLE_VMP /DENABLE_VM_RUN /DIWORLD_DEV_BUILD")
+	endif()
+	set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+	#平台名,和跨平台include的目录有关
+	set(BUILD_PLATFROM_TYPE "win32")
+	add_definitions(
+		-DWIN32
+	)
+elseif(APPLE_IOS)
+
+    MESSAGE("===========IOS BUILDING MESSAGE INFO==============")
+    set(TargetPlatform "ios")
+    # set(CMAKE_EXE_LINKER_FLAGS   "-framework OpenGLES -framework Foundation -framework CoreGraphics -framework QuartzCore -framework UIKit")
+
+    set(CMAKE_XCODE_ATTRIBUTE_GCC_UNROLL_LOOPS "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_LLVM_VECTORIZE_LOOPS "YES")
+    
+    # set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Distribution")
+    # set(MINI_XCODE_SIGN_IDENTITY "Apple Development: mini wan (EPWSFS6EP6)")
+    #这里看你要修改一下到时候
+    # set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.yourcompany.\${PRODUCT_NAME:rfc1034identifier}")
+    # set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
+    # set(XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
+    # set(OGRE_STATIC TRUE CACHE BOOL "Forcing static build for iOS" FORCE)
+
+    set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG}  -D_DEBUG -DDEBUG_RENDER")
+    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
+    set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)")
+    set(CMAKE_XCODE_ATTRIBUTE_ENABLE_BITCODE "NO")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fembed-bitcode")
+    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fembed-bitcode")
+    set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "9.0")
+    # set_xcode_property (CommonPlugin CLANG_CXX_LANGUAGE_STANDARD "gnu++11")
+    # set_xcode_property (CommonPlugin CLANG_CXX_LIBRARY "libc++")
+  
+    # set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "gnu++11")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC "YES")
+    if(POLICY CMP0068)
+      cmake_policy(SET CMP0068 NEW)  # CMake 3.9+: `RPATH` settings on macOS do not affect `install_name`.
+    endif()
+  
+    if (NOT CMAKE_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "") # target the common case
+    endif()
+  
+    # otherwise apple defines a macro named check that conflicts with boost
+    add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
+    # option(OGRE_BUILD_RENDERSYSTEM_OGL " OpenGL ES 2/3" TRUE)
+    #平台名,和跨平台include的目录有关
+    set(BUILD_PLATFROM_TYPE "ios")
+
+
+elseif (ANDROID)
+
+    string(TOUPPER ${CMAKE_BUILD_TYPE} OGRE_BUILD_TYPE)
+    if(OGRE_BUILD_TYPE STREQUAL "DEBUG")
+        #是否是调试
+        set(IS_BUILD_DEBUG TRUE)
+    endif()
+    #调试模式，这里是全局宏，全局都有效的
+    if(IS_BUILD_DEBUG)
+        MESSAGE("=========PROJECT BUILDING FOR DEBUG=========")
+        add_definitions(
+          #渲染的调试宏是否开启
+          -D_DEBUG
+          -DDEBUG_RENDER
+        )
+    else()
+        add_definitions(
+            #渲染的调试宏是否开启
+            -DNDEBUG
+        )
+        MESSAGE("=========PROJECT BUILDING FOR RELEASE=========")
+    endif()
+
+    set(TargetPlatform "android")
+    set(OGRE_PLATFORM OGRE_PLATFORM_ANDROID)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS ON)
+    # set(ANDROID_PLATFORM android-19)
+    # set(ANDROID_NATIVE_API_LEVEL android-19)
+    MESSAGE("==========ANDROID_TOOLCHAIN_NAME:${ANDROID_TOOLCHAIN_NAME}===========")
+    # option(OGRE_BUILD_RENDERSYSTEM_OGL " OpenGL ES 2/3" TRUE)
+    #平台名,和跨平台include的目录有关
+    set(BUILD_PLATFROM_TYPE "android")
+    #set(OGRE_STATIC TRUE CACHE BOOL "Forcing static build for Android" TRUE)
+    MESSAGE("===========ANDROID BUILDING MESSAGE INFO==============")
+    MESSAGE("C COMPILER:" ${CMAKE_C_COMPILER})
+    MESSAGE("C++ COMPILER:" ${CMAKE_CXX_COMPILER})
+    MESSAGE("IS_TEGRA_ANDROID:" ${IS_TEGRA_ANDROID})
+    MESSAGE("IS_NEW_STL:" ${IS_NEW_STL})
+    MESSAGE("IS_CLANG:" ${IS_CLANG})
+    if(IS_TEGRA_ANDROID)
+      set(ANDROID_STL_TYPE "gnustl_static")
+      set(CMAKE_ANDROID_STL_TYPE "gnustl_static")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s -std=c99 -fexceptions")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -s -std=c++11 -Os -frtti -fsigned-char -fpermissive -fexceptions -Wno-deprecated-declarations -Wno-reorder -Wundef -Wcomment -Wno-sign-compare -Wcast-qual -Wshadow")
+    else()
+      #IS_NEW_STL 是新版本clang的STL库，libc++
+      if(NOT IS_NEW_STL)
+        set(ANDROID_STL_TYPE "gnustl_static")
+        set(CMAKE_ANDROID_STL_TYPE "gnustl_static")
+      endif()
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -std=gnu99 -fexceptions")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++11")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Os -frtti -fsigned-char -fPIC -fpermissive -fexceptions")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-reorder")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-format")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-switch")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-value")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-parentheses")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-enum-compare")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-reorder")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-undef")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-comment")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-shadow")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-cast-qual")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+      if(IS_CLANG)
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-pointer-bool-conversion")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-null-conversion")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-macro-redefined")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-int-to-void-pointer-cast")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-invalid-source-encoding")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-string-compare")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-logical-op-parentheses")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-inconsistent-missing-override")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument")
+		    #设置clang的编译选项，默认的编译选项会出现程序崩溃的情况
+        set(CMAKE_C_FLAGS_RELEASE  "-marm -fno-omit-frame-pointer -fno-strict-aliasing -O0 -DNDEBUG")
+        set(CMAKE_CXX_FLAGS_RELEASE  "-marm -fno-omit-frame-pointer -fno-strict-aliasing -O0 -DNDEBUG")
+        add_definitions(-DIS_CLANG)
+        #CLANG编译，不要-S，自己剥离符号表
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}   -O1")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}   -O1")
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}   -O3")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+      else()
+        #GCC编译
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-but-set-variable")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-maybe-uninitialized")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-ignored-qualifiers")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-missing-declarations")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}  -g  -O1")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g  -O1")
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}  -g  -O2")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g  -O2")
+      endif()
+    endif()
+    MESSAGE("ANDROID_STL_TYPE:" ${ANDROID_STL_TYPE})
+    MESSAGE("CMAKE_ANDROID_STL_TYPE:" ${CMAKE_ANDROID_STL_TYPE})
+    if(IS_NEW_STL)
+      add_definitions(-DIS_NEW_STL)
+    endif()
+    add_definitions(
+      -D__ANDROID__
+      -DANDROID
+    )
+
+    if(${ANDROID_ABI} STREQUAL "arm64-v8a")
+      add_definitions(-DANDROID_ARM64)
+    endif()
+
+
+elseif(EMSCRIPTEN)
+    add_definitions(-DEMSCRIPTEN=1 -D__EMSCRIPTEN__=1)
+    set(TargetPlatform "Emscripten")
+    set(OGRE_PLATFORM OGRE_PLATFORM_EMSCRIPTEN)
+    # option(OGRE_BUILD_RENDERSYSTEM_OGL "Forcing OpenGL ES 2 RenderSystem for Android" TRUE)
+    #平台名,和跨平台include的目录有关
+    set(BUILD_PLATFROM_TYPE "emscripten")
+
+elseif (APPLE_MAC)
+    set(XCODE_ATTRIBUTE_SDKROOT macosx)
+    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      execute_process(COMMAND xcodebuild -version -sdk "${XCODE_ATTRIBUTE_SDKROOT}" Path | head -n 1 OUTPUT_VARIABLE CMAKE_OSX_SYSROOT)
+      string(REGEX REPLACE "(\r?\n)+$" "" CMAKE_OSX_SYSROOT "${CMAKE_OSX_SYSROOT}")
+    else()
+      set(CMAKE_OSX_SYSROOT macosx)
+    endif()
+
+    # Make sure that the OpenGL render system is selected for non-iOS Apple builds
+    # set(OGRE_BUILD_RENDERSYSTEM_OGL FALSE)
+    #平台名,和跨平台include的目录有关
+    set(BUILD_PLATFROM_TYPE "mac")
+elseif(LINUX_SERVER)
+    set(TargetPlatform "linux")
+    # set(CMAKE_C_COMPILE "/usr/bin/gcc")
+    # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+
+    MESSAGE("C COMPILER:" ${CMAKE_C_COMPILER})
+    MESSAGE("C++ COMPILER:" ${CMAKE_CXX_COMPILER})
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g  -lpthread -fPIC  -ldl -lrt -luuid -m64 -fexceptions")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -lpthread  -fPIC -ldl -lrt -luuid -m64 -std=c++11 -Os -frtti -fsigned-char -fpermissive -fexceptions -Wno-deprecated-declarations -Wno-reorder -Wundef -Wcomment -Wno-sign-compare -Wcast-qual -Wshadow")
+  
+    set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG}  -D_DEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
+
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}  -O0")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -O0")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s -O3")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O3")
+
+  
+
+    set(OGRE_PLATFORM OGRE_PLATFORM_LINUXPC)
+    set(BUILD_PLATFROM_TYPE "linux")
+    add_definitions(
+      -DFT2_BUILD_LIBRARY
+      -DOGRE_NONCLIENT_BUILD
+      -DUSE_MEMORYDELEGATION
+      -DHAVE_MEMMOVE
+      -D__PC_LINUX__
+    )
+    
+endif ()
+
+# Enable the PVRTC codec if OpenGL ES is being built
+# if(OGRE_BUILD_RENDERSYSTEM_OGL)
+#   set(OGRE_CONFIG_ENABLE_PVRTC TRUE CACHE BOOL "Forcing PVRTC codec for OpenGL ES" FORCE)
+#   set(OGRE_CONFIG_ENABLE_ETC TRUE CACHE BOOL "Forcing ETC codec for OpenGL ES" FORCE)
+# endif()
+
+# Find dependencies
+#include(Dependencies)
+
+if(MSVC)
+	add_definitions( /wd4251 /wd4275 )
+endif()
+#记录要加载的第三方LIBRARIES
+
+# set_property(GLOBAL PROPERTY MINI_WAN_LIBRARIES "")
+
+
+#全局的宏
+add_definitions(
+  # -D_CRT_SECURE_NO_DEPRECATE
+  # -D_CRT_SECURE_NO_WARNINGS
+  # -D_CRT_NONSTDC_NO_WARNINGS
+  #TDR内使用
+  -DFT2_BUILD_LIBRARY
+  -DTDR_WITH_XML
+  -DTSF4G_STATIC
+  #游戏内搬过来的
+  -DUSE_MEMORYDELEGATION
+  -DPX_PHYSX_STATIC_LIB
+)
+
+
+if(APPLE_IOS OR ANDROID OR LINUX_SERVER)
+    add_definitions(
+          -D_USE_PTHREAD_
+    )
+endif()
+
+#external
+add_subdirectory(external)
+
+#if(NOT LINUX_SERVER)
+#  add_subdirectory(sdk)
+#endif()
+
+###引擎层
+#engine预编译工程
+# add_subdirectory(miniEngineSDK)
+
+#引擎源码工程
+add_subdirectory(miniEngine)
+
+#自定义修改库
+add_subdirectory(miniModule/RakNet)
+
+if(WIN32)
+  add_subdirectory(miniModule/CPython)
+endif()
+
+#迷你上报
+add_subdirectory(miniModule/MiniReport)
+
+#游戏层
+add_subdirectory(miniGame/OgreMainExt)
+
+add_subdirectory(miniGame/scriptsupport)
+
+add_subdirectory(miniGame/iworld)
+
+# MESSAGE("===MINI_LIBRARIES:"${MINI_WAN_LIBRARIES})
+if(WIN32)
+  add_subdirectory(miniGame/GameApp)
+elseif(ANDROID)
+  if(ANDROID_OVERSEAS)
+	add_subdirectory(miniGame/OverSeasApp/AndroidJNI)
+  else()
+	add_subdirectory(miniGame/AndroidApp)
+  endif()
+  add_dependencies(AppPlayJNI libiworld)
+elseif(APPLE_IOS)
+  # add_subdirectory(miniGame/IOSApp)
+elseif(LINUX_SERVER)
+  add_subdirectory(miniGame/LinuxServer)
+endif()
